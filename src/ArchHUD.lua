@@ -116,6 +116,20 @@ VERSION_NUMBER = 1.500
     ExtraLateralTags = "none" --export:
     ExtraVerticalTags = "none" --export:
 
+    -- MPRN Variables Beginning
+    mprnStatus = 'OFF'
+    distanceThreshold = 5000 --export:
+    speedThreshold = 500 
+    currentSpeed = 0
+    inRange = false
+    inSpeed = false
+    currentWayPoint = 0
+    inTargetRange = 0
+    lastBrakeLanding = false
+    lastAutopilotBraking = false
+    wpList = route --export:
+    -- MPRN Variables Ending
+
 -- Auto Variable declarations that store status of ship. Must be global because they get saved/read to Databank due to using _G assignment
     BrakeToggleStatus = BrakeToggleDefault
     VertTakeOffEngine = false 
@@ -4485,6 +4499,7 @@ VERSION_NUMBER = 1.500
                 ProgradeIsOn = true
                 spaceLand = true
                 AP.showWayPoint(autopilotTargetPlanet, CustomTarget.position)
+                MPRN_NextTarget()
             end
 
             if followMode then
@@ -4998,8 +5013,75 @@ VERSION_NUMBER = 1.500
         abvGndDet = AboveGroundLevel()
         return ap
     end
+
+    -- MPRN UNIT START Beginning
+    local function MPRN_InjectTarget(p)
+        local temp = true
+        local savename = ".MPNAV_ROUTE"
+        local pos = p
+        AddNewLocationByWaypoint(savename, pos, temp)
+        AutopilotTargetIndex = 1
+        ToggleAutopilot()
+        system.print('Destination set to waypoint #'.. currentWayPoint .. ' ('  .. p .. ')')
+    end
+    local function MPRN_Update()
+        if currentWayPoint == #(wpList) then mprnStatus = 'OFF' end
+
+        if lastBrakeLanding == true and BrakeLanding == false then MPRN_NextTarget() end
+        if lastAutopilotBraking == true and AutopilotBraking == false then MPRN_NextTarget() end
+
+        lastBrakeLanding = BrakeLanding
+        lastAutopilotBraking = AutopilotBraking
+    end
+    function MPRN_NextTarget()
+        if mprnStatus == 'ON' then
+            currentWayPoint = currentWayPoint + 1
+            MPRN_InjectTarget(wpList[currentWayPoint])
+            cmdThrottle(100)
+            if BrakeIsOn == true then BrakeToggle() end
+            if GearExtended == true then
+                Nav.control.retractLandingGears()
+                navCom:setTargetGroundAltitude(TargetHoverHeight)
+            end
+        end
+    end
+    local function MPRNPanelUpdate()
+        system.updateData(mprn_data_status,'{"label": "Status", "value": "'.. mprnStatus .. '", "unit": ""}')
+        system.updateData(mprn_data_wp,'{"label": "Waypoint", "value": "'.. currentWayPoint ..' of '.. #(wpList) .. '", "unit": ""}')
+        system.updateData(mprn_data_vectorstatus,'{"label": "VectorStatus", "value": "'.. tostring(VectorStatus) .. '", "unit": ""}')
+        system.updateData(mprn_data_BrakeLanding,'{"label": "BrakeLanding", "value": "'.. tostring(BrakeLanding) .. '", "unit": ""}')
+        system.updateData(mprn_data_AutopilotTargetIndex,'{"label": "AutopilotTargetIndex", "value": "'.. tostring(AutopilotTargetIndex) .. '", "unit": ""}')
+        system.updateData(mprn_data_GearExtended,'{"label": "GearExtended", "value": "'.. tostring(GearExtended) .. '", "unit": ""}')
+        system.updateData(mprn_data_AutopilotBraking,'{"label": "AutopilotBraking", "value": "'.. tostring(AutopilotBraking) .. '", "unit": ""}')
+    end
+    -- MPRN UNIT START Ending
+
 -- DU Events written for wrap and minimization. Written by Dimencia and Archaegeo. Optimization and Automation of scripting by ChronosWS  Linked sources where appropriate, most have been modified.
     function script.onStart()
+        mprn_panel = system.createWidgetPanel("Multi-Point Route Nav")
+        mprn_widget = system.createWidget(mprn_panel, "value")
+        -- Status
+        mprn_data_status = system.createData('{"label": "Status", "value": "'.. mprnStatus .. '", "unit": ""}')
+        system.addDataToWidget(mprn_data_status, mprn_widget)
+        -- Waypoint
+        mprn_data_wp = system.createData('{"label": "Waypoint", "value": "'.. currentWayPoint ..' of '.. #(wpList) .. '", "unit": ""}')
+        system.addDataToWidget(mprn_data_wp, mprn_widget)
+        -- VectorStatus
+        mprn_data_vectorstatus = system.createData('{"label": "VectorStatus", "value": "'.. tostring(VectorStatus) .. '", "unit": ""}')
+        system.addDataToWidget(mprn_data_vectorstatus, mprn_widget)
+        -- BrakeLandingus
+        mprn_data_BrakeLanding = system.createData('{"label": "BrakeLanding", "value": "'.. tostring(BrakeLanding) .. '", "unit": ""}')
+        system.addDataToWidget(mprn_data_BrakeLanding, mprn_widget)
+        -- BrakeLandingus
+        mprn_data_AutopilotTargetIndex = system.createData('{"label": "AutopilotTargetIndex", "value": "'.. tostring(AutopilotTargetIndex) .. '", "unit": ""}')
+        system.addDataToWidget(mprn_data_AutopilotTargetIndex, mprn_widget)
+        -- GearExtended
+        mprn_data_GearExtended = system.createData('{"label": "GearExtended", "value": "'.. tostring(GearExtended) .. '", "unit": ""}')
+        system.addDataToWidget(mprn_data_GearExtended, mprn_widget)
+        -- AutopilotBraking
+        mprn_data_AutopilotBraking = system.createData('{"label": "AutopilotBraking", "value": "'.. tostring(AutopilotBraking) .. '", "unit": ""}')
+        system.addDataToWidget(mprn_data_AutopilotBraking, mprn_widget)
+ 
         -- Local functions for onStart
             local ControlButtons = {}
             local SettingButtons = {}
@@ -5824,6 +5906,7 @@ VERSION_NUMBER = 1.500
             end
             unit.stopTimer("contact")
         elseif timerId == "tenthSecond" then -- Timer executed ever tenth of a second
+            MPRNPanelUpdate()
             -- Local Functions for tenthSecond
 
                 local function SetupInterplanetaryPanel() -- Interplanetary helper
@@ -6941,6 +7024,10 @@ VERSION_NUMBER = 1.500
             end
             LastContent = content
         end
+        
+        -- MPRN SYSTEM UPDATE Beginning
+        MPRN_Update()
+        -- MPRN SYSTEM UPDATE Ending
     end
 
     function script.onActionStart(action)
@@ -7707,6 +7794,14 @@ VERSION_NUMBER = 1.500
             else
                 msgText = "No target selected in IPH"
             end
+            -- MPRN SYSTEM INPUTTEXT Beginning
+        elseif command == "start" then
+            mprnStatus = 'ON'
+            MPRN_NextTarget()
+        elseif command == "stop" then
+            currentWayPoint = 0
+            mprnStatus = 'OFF'
+        -- MPRN SYSTEM INPUTTEXT Ending
         end
     end
 

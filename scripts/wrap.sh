@@ -19,7 +19,7 @@ fi
 MINIFY="${1:-false}"
 # We expect this file to be run from the <repo>/scripts directory
 LUA_SRC=${2:-$ROOTDIR/src/ArchHUD.lua}
-CONF_DST=${3:-$ROOTDIR/ArchHUD.conf}
+CONF_DST=${3:-$ROOTDIR/ArchHUD+MPRN.conf}
 
 # Make a fresh work dir
 WORK_DIR=${ROOTDIR}/scripts/work

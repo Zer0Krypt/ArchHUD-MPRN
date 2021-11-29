@@ -22,7 +22,9 @@ Note: MPRN will trigger the next destination upon completion of 'Brake-Landing' 
 
 All autopilot, and flight mechanics are 100% ArchHUD and unmodified. MPRN simply detects when a waypoint has been reached, and tells ArchHUD to go to the next destination. I have tested this with routes that both enter and leave atmosphere, with successful results.
 
-MPRN is extremely useful for mission haulers or PVP zone travelers who wish to travel long distances off the beaten path, far from the patrolled pipes, by allowing users to specify routes that taken them deep into space. https://du-map.com is a useful resource when it comes to spacial understanding of the solar system and planning travel routes.
+MPRN is extremely useful for mission haulers or PVP zone travelers who wish to travel long distances off the beaten path, far from the patrolled pipes, by allowing users to specify routes that taken them deep into space.
+
+https://du-map.com is a useful resource when it comes to spacial understanding of the solar system and planning travel routes.
 
 <!--Intro information-->
 # Arch-Orbital-HUD

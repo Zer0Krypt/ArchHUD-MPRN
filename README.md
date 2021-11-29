@@ -6,19 +6,19 @@
 ###### In-game donations are appreciated but not expected. If you wish to send some quanta's my way, please send them to the organization "Corellian Engineering Corp"
 
 ## MPRN Instructions
-1) Flash the ArchHUD+MPRN.conf file to your pilot seat as per normal.
+1) Run the custom autoconfigure ArchHUD+MPRN.conf on your pilot seat/remote controller as per normal.
 2) Edit the Unit>Start() Filter and add a route list similar to the below example
-'
+```Lua
 route = {
     'posStringHere1'
     ,'posStringHere2'
     ,'posStringHere3'
 }
-
+```
 3) Once a route has been planned in the above step, the command 'start' can be used in lua chat to begin route navigation automatically (will start ArchHUD autopilot, throttle up and release brakes automatically)
 4) Autopilot will stop once the final waypoint has been reached. To interrupt the MPRN, use 'stop' in lua chat.
 
-Note: MPRN will trigger the next destination up completion of 'Brake-Landing' phase in Atmosphere....or....at the completion of the 'Braking' phase in Space.
+Note: MPRN will trigger the next destination upon completion of 'Brake-Landing' phase in Atmosphere....or....at the completion of the 'Braking' phase in Space.
 
 All autopilot, and flight mechanics are 100% ArchHUD and unmodified. MPRN simply detects when a waypoint has been reached, and tells ArchHUD to go to the next destination. I have tested this with routes that both enter and leave atmosphere, with successful results.
 

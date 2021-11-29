@@ -16,7 +16,7 @@ route = {
 }
 ```
 3) Once a route has been planned in the above step, the command 'start' can be used in lua chat to begin route navigation automatically (will start ArchHUD autopilot, throttle up and release brakes automatically)
-4) Autopilot will stop once the final waypoint has been reached. To interrupt the MPRN, use 'stop' in lua chat.
+4) Autopilot will stop once the final waypoint has been reached. To interrupt the MPRN, use 'stop' in lua chat to reset MPRN, or simply use ArchHUD's Alt+4 to toggle off the autopilot.
 
 Note: MPRN will trigger the next destination upon completion of 'Brake-Landing' phase in Atmosphere....or....at the completion of the 'Braking' phase in Space.
 

@@ -1,3 +1,28 @@
+<!--Multi-Point Route Navigation-->
+# Multi-Point Route Navigation (MPRN)
+## A modification that allows you to fly a route of waypoints automatically. Waypoints can be a mixture of space and atmospheric waypoints.
+
+###### For assistance, please contact me in-game (Zer0Krypt) or via discord (Zer0Krypt#0001)
+###### In-game donations are appreciated but not expected. If you wish to send some quanta's my way, please send them to the organization "Corellian Engineering Corp"
+
+## MPRN Instructions
+1) Flash the ArchHUD+MPRN.conf file to your pilot seat as per normal.
+2) Edit the Unit>Start() Filter and add a route list similar to the below example
+'
+route = {
+    'posStringHere1'
+    ,'posStringHere2'
+    ,'posStringHere3'
+}
+
+3) Once a route has been planned in the above step, the command 'start' can be used in lua chat to begin route navigation automatically (will start ArchHUD autopilot, throttle up and release brakes automatically)
+4) Autopilot will stop once the final waypoint has been reached. To interrupt the MPRN, use 'stop' in lua chat.
+
+Note: MPRN will trigger the next destination up completion of 'Brake-Landing' phase in Atmosphere....or....at the completion of the 'Braking' phase in Space.
+
+All autopilot, and flight mechanics are 100% ArchHUD and unmodified. MPRN simply detects when a waypoint has been reached, and tells ArchHUD to go to the next destination. I have tested this with routes that both enter and leave atmosphere, with successful results.
+
+MPRN is extremely useful for mission haulers or PVP zone travelers who wish to travel long distances off the beaten path, far from the patrolled pipes, by allowing users to specify routes that taken them deep into space. https://du-map.com is a useful resource when it comes to spacial understanding of the solar system and planning travel routes.
 
 <!--Intro information-->
 # Arch-Orbital-HUD

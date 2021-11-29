@@ -7654,7 +7654,7 @@ VERSION_NUMBER = 1.500
                 msgTimer = 5
             end
 
-            local function AddNewLocationByWaypoint(savename, pos, temp)
+            function AddNewLocationByWaypoint(savename, pos, temp)
 
                 local function zeroConvertToWorldCoordinates(pos) -- Many thanks to SilverZero for this.
                     local num  = ' *([+-]?%d+%.?%d*e?[+-]?%d*)'

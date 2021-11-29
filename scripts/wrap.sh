@@ -67,7 +67,7 @@ SLOTS=(
 
 echo "Wrapping ..."
 lua ${ROOTDIR}/scripts/wrap.lua --handle-errors --output yaml \
-             --name "ArchHud - Archaegeo v$VERSION_NUMBER (Minified)" \
+             --name "ArchHud+MPRN v$VERSION_NUMBER (Minified)" \
              $WORK_DIR/ArchHUD.min.lua $WORK_DIR/ArchHUD.wrapped.conf \
              --slots ${SLOTS[*]}
 

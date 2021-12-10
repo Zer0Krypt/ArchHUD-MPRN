@@ -4499,6 +4499,7 @@ VERSION_NUMBER = 1.500
                 ProgradeIsOn = true
                 spaceLand = true
                 AP.showWayPoint(autopilotTargetPlanet, CustomTarget.position)
+                p('NEXT TARGET ATMO')
                 MPRN_NextTarget()
             end
 
@@ -5012,6 +5013,30 @@ VERSION_NUMBER = 1.500
         end
         abvGndDet = AboveGroundLevel()
         return ap
+    end
+
+    local function AddNewLocationByWaypoint(savename, pos, temp)
+
+        local function zeroConvertToWorldCoordinates(pos) -- Many thanks to SilverZero for this.
+            local num  = ' *([+-]?%d+%.?%d*e?[+-]?%d*)'
+            local posPattern = '::pos{' .. num .. ',' .. num .. ',' ..  num .. ',' .. num ..  ',' .. num .. '}'    
+            local systemId, id, latitude, longitude, altitude = stringmatch(pos, posPattern)
+            if (systemId == "0" and id == "0") then
+                return vec3(tonum(latitude),
+                            tonum(longitude),
+                            tonum(altitude))
+            end
+            longitude = math.rad(longitude)
+            latitude = math.rad(latitude)
+            local planet = atlas[tonum(systemId)][tonum(id)]  
+            local xproj = math.cos(latitude);   
+            local planetxyz = vec3(xproj*math.cos(longitude),
+                                xproj*math.sin(longitude),
+                                    math.sin(latitude));
+            return planet.center + (planet.radius + altitude) * planetxyz
+        end   
+        local position = zeroConvertToWorldCoordinates(pos)
+        return ATLAS.AddNewLocation(savename, position, temp)
     end
 
     -- MPRN UNIT START Beginning
@@ -7654,29 +7679,7 @@ VERSION_NUMBER = 1.500
                 msgTimer = 5
             end
 
-            function AddNewLocationByWaypoint(savename, pos, temp)
-
-                local function zeroConvertToWorldCoordinates(pos) -- Many thanks to SilverZero for this.
-                    local num  = ' *([+-]?%d+%.?%d*e?[+-]?%d*)'
-                    local posPattern = '::pos{' .. num .. ',' .. num .. ',' ..  num .. ',' .. num ..  ',' .. num .. '}'    
-                    local systemId, id, latitude, longitude, altitude = stringmatch(pos, posPattern)
-                    if (systemId == "0" and id == "0") then
-                        return vec3(tonum(latitude),
-                                    tonum(longitude),
-                                    tonum(altitude))
-                    end
-                    longitude = math.rad(longitude)
-                    latitude = math.rad(latitude)
-                    local planet = atlas[tonum(systemId)][tonum(id)]  
-                    local xproj = math.cos(latitude);   
-                    local planetxyz = vec3(xproj*math.cos(longitude),
-                                        xproj*math.sin(longitude),
-                                            math.sin(latitude));
-                    return planet.center + (planet.radius + altitude) * planetxyz
-                end   
-                local position = zeroConvertToWorldCoordinates(pos)
-                return ATLAS.AddNewLocation(savename, position, temp)
-            end
+            -- AddNewLocationByWaypoint() WAS HERE
 
         local i
         local command, arguement = nil, nil

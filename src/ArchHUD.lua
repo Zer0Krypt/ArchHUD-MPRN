@@ -5,7 +5,7 @@ local atlas = require("atlas")
 
 script = {}  -- wrappable container for all the code. Different than normal DU Lua in that things are not seperated out.
 
-VERSION_NUMBER = 1.500
+VERSION_NUMBER = 1.502
 
 -- User variables, visable via Edit Lua Parameters. Must be global to work with databank system as set up due to using _G assignment
     useTheseSettings = false --export:
@@ -40,6 +40,8 @@ VERSION_NUMBER = 1.500
     voices = true --export:
     alerts = true --export:
     CollisionSystem = true --export:
+    AutoShieldToggle = true --export:
+    PreventPvP = true --export:
     
     -- Ship Handling variables
     YawStallAngle = 35 --export:
@@ -344,6 +346,7 @@ VERSION_NUMBER = 1.500
     local oldShowHud = showHud
     local AtlasOrdered = {}
     local notPvPZone = false
+    local pvpDist = 0
 
     local pipeMessage = ""
     local ReversalIsOn = nil
@@ -473,7 +476,7 @@ VERSION_NUMBER = 1.500
                 "InvertMouse", "autoRollPreference", "ExternalAGG", "UseSatNav", "ShouldCheckDamage", 
                 "CalculateBrakeLandingSpeed", "AtmoSpeedAssist", "ForceAlignment", "DisplayDeadZone", "showHud", "ShowOdometer", "hideHudOnToggleWidgets", 
                 "ShiftShowsRemoteButtons", "DisplayOrbit", "SetWaypointOnExit", "AlwaysVSpd", "BarFuelDisplay", "Cockpit",
-                "voices", "alerts", "CollisionSystem"}
+                "voices", "alerts", "CollisionSystem", "AutoShieldToggle", "PreventPvP"}
             local savableVariablesHandling = {"YawStallAngle","PitchStallAngle","brakeLandingRate","MaxPitch", "ReEntryPitch","LockPitchTarget", "AutopilotSpaceDistance", "TargetOrbitRadius", "LowOrbitHeight",
                 "AtmoSpeedLimit","SpaceSpeedLimit","AutoTakeoffAltitude","TargetHoverHeight", "LandingGearGroundHeight", "ReEntryHeight",
                 "MaxGameVelocity", "AutopilotInterplanetaryThrottle","warmup","fuelTankHandlingAtmo","fuelTankHandlingSpace",
@@ -1787,7 +1790,7 @@ VERSION_NUMBER = 1.500
         return Radar
     end 
     local function HudClass() -- Everything HUD display releated including tick
-        local pvpDist = 0
+
         local gravConstant = 9.80665
 
         --Local Huds Functions
@@ -2166,11 +2169,11 @@ VERSION_NUMBER = 1.500
                 local rectH = 19
             
                 local gndHeight = abvGndDet
-            
+
                 if abvGndDet ~= -1 then
                     newContent[#newContent + 1] = svgText(rectX+rectW, rectY+rectH+20, stringf("AGL: %.1fm", abvGndDet), "pdim altsm txtend")
                 end
-            
+
                 if nearPlanet and ((altitude < 200000 and not inAtmo) or (altitude and inAtmo)) then
                     table.insert(newContent, stringf([[
                         <g class="pdim">                        
@@ -2179,16 +2182,18 @@ VERSION_NUMBER = 1.500
                             <g clip-path="url(#alt)">]], 
                             rectX - 1, rectY - 4, rectW + 2, rectH + 6,
                             rectX + 1, rectY - 1, rectW - 4, rectH))
-            
                     local index = 0
                     local divisor = 1
                     local forwardFract = 0
                     local isNegative = altitude < 0
+
                     local isLand = altitude < planet.surfaceMaxAltitude
+
                     local rolloverDigit = 9
                     if isNegative then
                         rolloverDigit = 0
                     end
+
                     local altitude = mabs(altitude)
                     while index < 6 do
                         local glyphW = 11
@@ -2222,7 +2227,7 @@ VERSION_NUMBER = 1.500
                                 fract = 1 - fract
                             end
                         end
-            
+
                         if isNegative and (index == 0 or forwardFract ~= 0) then
                             local temp = fracDigit
                             fracDigit = intDigit
@@ -2237,7 +2242,7 @@ VERSION_NUMBER = 1.500
                         
                         newContent[#newContent + 1] = svgText(x, y + topGlyphOffset,fracDigit, class)
                         newContent[#newContent + 1] = svgText(x, y + botGlyphOffset,intDigit , class)
-                        
+
                         index = index + 1
                         divisor = divisor * 10
                         if intDigit == rolloverDigit then
@@ -2752,10 +2757,16 @@ VERSION_NUMBER = 1.500
                 PrimaryR = PvPR
                 PrimaryG = PvPG
                 PrimaryB = PvPB
+                if shield_1 and AutoShieldToggle and shield_1.getState() == 0 then
+                    shield_1.toggle()
+                end
             else
                 PrimaryR = SafeR
                 PrimaryG = SafeG
                 PrimaryB = SafeB
+                if shield_1 and AutoShieldToggle and shield_1.getState() == 1 then
+                    shield_1.toggle()
+                end
             end
             rgb = [[rgb(]] .. mfloor(PrimaryR + 0.5) .. "," .. mfloor(PrimaryG + 0.5) .. "," .. mfloor(PrimaryB + 0.5) .. [[)]]
             rgbdim = [[rgb(]] .. mfloor(PrimaryR * 0.9 + 0.5) .. "," .. mfloor(PrimaryG * 0.9 + 0.5) .. "," ..   mfloor(PrimaryB * 0.9 + 0.5) .. [[)]]    
@@ -4349,7 +4360,12 @@ VERSION_NUMBER = 1.500
                         apDist = apDist - AutopilotSpaceDistance
                     end
 
-                    if apDist <= brakeDistance then
+                    if apDist <= brakeDistance or (PreventPvP and pvpDist <= brakeDistance+10000) then
+                        if (PreventPvP and pvpDist <= brakeDistance+10000) then 
+                            ToggleAutopilot()
+                            msgText = "Autopilot cancelled to prevent crossing PvP Line" 
+                            BrakeIsOn=true
+                        end
                         AutopilotAccelerating = false
                         if AutopilotStatus ~= "Braking" then
                             play("apBrk","AP")
@@ -4435,7 +4451,12 @@ VERSION_NUMBER = 1.500
                         apDist = apDist - AutopilotSpaceDistance
                     end
 
-                    if apDist <= brakeDistance then
+                    if apDist <= brakeDistance or (PreventPvP and pvpDist <= brakeDistance+10000) then
+                        if (PreventPvP and pvpDist <= brakeDistance+10000) then 
+                            ToggleAutopilot()
+                            msgText = "Autopilot cancelled to prevent crossing PvP Line" 
+                            BrakeIsOn=true
+                        end
                         AutopilotAccelerating = false
                         if AutopilotStatus ~= "Braking" then
                             play("apBrk","AP")
@@ -5285,14 +5306,17 @@ VERSION_NUMBER = 1.500
                                                             vanillaMaxVolume, massEmpty, curMass, curTime}
                         end
                         if (type == "Space Fuel Tank") then
-                            local vanillaMaxVolume = 2400
-                            local massEmpty = 182.67
+                            local vanillaMaxVolume = 600
+                            local massEmpty = 35.03
                             if hp > 10000 then
                                 vanillaMaxVolume = 76800 -- volume in kg of L tank
                                 massEmpty = 5480
                             elseif hp > 1300 then
                                 vanillaMaxVolume = 9600 -- volume in kg of M
                                 massEmpty = 988.67
+                            elseif hp > 150 then
+                                vanillaMaxVolume = 2400 -- volume in kg of S
+                                massEmpty = 182.67                                
                             end
                             curMass = mass - massEmpty
                             if fuelTankHandlingSpace > 0 then
@@ -5798,6 +5822,7 @@ VERSION_NUMBER = 1.500
                         planet.gravity = planet.gravity/9.8
                         planet.center = vec3(planet.center)
                         planet.name = planet.name[1]
+                        if planet.name=="Lacobus" then planet.surfaceMaxAltitude = 1660 end
                 
                         planet.noAtmosphericDensityAltitude = planet.atmosphereThickness or (planet.atmosphereRadius-planet.radius)
                         planet.spaceEngineMinAltitude = altTable[planet.id] or 0.68377*(planet.atmosphereThickness or (planet.atmosphereRadius-planet.radius))
@@ -7689,7 +7714,8 @@ VERSION_NUMBER = 1.500
                 "/::pos{0,0,13771471,7435803,-128971} - adds a temporary waypoint that is not saved to databank with name 0Temp\n"..
                 "/copydatabank - copies dbHud databank to a blank databank\n"..
                 "/iphWP - displays current IPH target's ::pos waypoint in lua chat\n"..
-                "/resist 0.15, 0.15, 0.15, 0.15 - Sets shield resistance distribution of the floating 60% extra available, usable once per minute"
+                "/resist 0.15, 0.15, 0.15, 0.15 - Sets shield resistance distribution of the floating 60% extra available, usable once per minute"..
+                "/deletewp - Deletes current selected custom wp"
         i = string.find(text, " ")
         command = text
         if i ~= nil then
@@ -7783,6 +7809,13 @@ VERSION_NUMBER = 1.500
                 end
             end
             msgText = "No such global variable: "..globalVariableName
+        
+        elseif command == "/deletewp" then
+            if autopilotTargetIndex > 0 and CustomTarget ~= nil then
+                ATLAS.ClearCurrentPosition()
+            else
+                msgText = "Select a custom wp to delete first in IPH"
+            end
         elseif command == "/copydatabank" then 
             if dbHud_2 then 
                 SaveDataBank(true) 
